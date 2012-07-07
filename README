@@ -1,0 +1,62 @@
+===== This part added 07.2012 =====
+
+*** Note, this is one of my oldest projects. I'm leaving it as is for "historical reasons", but it suffers from quite a few flaws, especially regarding documentation and clarity of code. I'm adding a short overview of the features and requirements here, but otherwise this project is largely untouched since I originally wrote it in 12.2009 ***
+
+What this is: A basic Haskell raytracer made in a week at the end of my first university semester for a programming contest. I ended up getting 2nd place: http://www.inf.ed.ac.uk/teaching/courses/inf1/fp/competition/2009/competition.html
+
+Running: runghc Main.hs
+
+Customizing: The rendered scene is set in "Values.hs", various other parameters can be set in "Declarations.hs"
+
+Features (these will probably be clearer after you check the "samples" folder):
+  - conic perspective (pin-hole camera)
+  - sphere and plane primitives
+  - diffuse and specular reflections (blinn-phong)
+  - shadows (lambert)
+  - texture mapping on spheres and planes
+  - cubic environment mapping (i.e. place world inside a big cube and put textures on the inside of the 6 faces, thus reflections behind the camera still look ok)
+  - procedurally generated textures similar to Perlin noise
+
+===== The Rest of this documentation and code is the original project from 2009 (barring some very minor modifications I just made to get it to generate the samples) =====
+----------------------------------------------------------------------------------------------------------------------
+
+This is a basic haskell raytracer. It has a conic perspective (pinhole-camera), sphere and plane detection, shadows based on the lambert functions and diffuse reflections implemented recursively to a level specified by the user. The Output is done via a PPM file which can be read in most image viewers(i used gimp)
+
+On to the more interesting features, for a greater degree of realism regarding the reflections it also implements the blinn-phong shading model (specular reflections). 
+
+However once this was implemented the variance in luminosity became quite large and the simple clamping of the colors inadequate, so i also implemeted a exponential tone mapping function, that is a function which equalizes the luminosity by modifying the extremes more than the averages.
+
+Following this i realized that if i were to create a image that could display the features i just implemeted it would need to contain fairly few objects that are fairly large, but simple plain colour spheres are boring. So i implemented texture mapping, that is we take a texture of the aproapiate size and map it on the sphere (like wraping a paper around a ball). I found this quite interesting to implement, as the math was based on the longitude and latitude of each respective point on the sphere and how we must translate that to 2D coordonates so that we can choose the correct pixel from the texture. 
+
+	Now i had a texture mapping function, but no textures. I searched for some online, but instead wound up learning about the magic of procedural textures, that is, textures generated on the fly by the program. This was probably the most complex feature i implemented and i am quite satisfied with the result. After reading quite a bit about the Perlin Noise generating algorithms, i finally decided on something similar, but not identical to the perlin noise. 
+	What i wanted was a function that generates pseudo-random patterns that are smooth and controllable (other functions can be applied over the patterns).
+	What i do is take a function that generates pseudo-random numbers based on 2 parameters,x and y. I say pseudo-random not only because it isn't actually possible (as far as i know) to generate true random numbers using only a computer, but also because it is important for our purposes that given the same inputs the function will generate the same output. It is also worth mentioning that by working on 2 parameters we can basically apply the function on 2D space, not only on 1D lines. 		Now, my function only worked on integers, so i had to use a interpolating method to make my overal function continuous. To this new created continuous function i applied a smoothing method, that works through taking weighted averages of the value of each pixel with the value of the 8 surounding pixels. Now comes the interesting part. I take this newly resulted function and for any given input i add together 5 (weighted) results of my function over that input, only at different frequencies and amplitudes. This ensures that the resulting function will have variance on all levels, from the overal picture to smaller details.
+	Finally i created a number of higher order functions that take my noise generator and apply it's results in other functions of varying complexity, we can thus generate quite a few interesting effects. 3 of these effects are texture mapped on the spheres in my final image.
+
+	Lastly i created a cubic environment map, that is, the whole visible world that i am simulating is put in one large cube which has on the inside of it's faces 6 different images (alpback, alpleft etc in my case). In this way we can relatively easily create a complete background for our world. For any viewpoint we must simply determine on which face of the cube it would fall and then return the respective pixel we need from that face. Actually since the viewpoint could fall between pixels i once again had to use an interpolating function to smooth out the look. Even though the background we see in my final image looks quite continuous it is actually created from a few of the individual images. 
+
+---------------------------------------------------------------------------------------------------------------------------
+
+
+Declarations -- type classes, some simple functions and different objects that i thought might be needed in a lot of modules
+
+Values -- just my current Scene, i had to do it like this because if i put it in Declarations there was a a error due to mutual importation of modules. 
+
+makePPM -- output functions, scaling functions, clamping functions - as the name says, creates the PPM
+
+Main -- just reading of the texture files and initiating of the ray trace with coordinates 
+
+RayTracer -- does a first intersection test, rays that intersect objects are sent to RTSecRays (ray tracing of secondary rays) and the others are sent to the cubic environmental mapping ; Also the exponential toning function is applied here, because at any later place it would have acted on the background textures as well, with unpleasent results
+
+CubicEnvironment -- takes a direction vector and return the needed pixel from the needed face
+
+RTSecRays -- Handles the recursive reflection rays by using RTIntersect. Also adds the specular reflection. When it has found the pixel it needs to make a reflection of, it calls RTShade for computation of lighting and TextureMap for determining the colour of said pixel
+
+RTIntersections -- Determines if a ray hits a ball and if yes, which ball and where it is hit
+
+RTShade -- calculates shading for a certain point, based on position of other objects and lambert function
+
+TextureMap -- it takes a ray and the object it hits and returns the colour of the textured pixel(texel) where the ray hit
+
+NoiseGen -- Creates the textures from a random number generator, has quite a few functions at the bottom which can be applied on the noise for different effects, based on perlin noise
+
