@@ -1,7 +1,7 @@
 Haskell Ray Tracer
 ===
 
-**First of all:** have a look at the *samples* folder. You can view the images directly on github. It contains 3 scenes and 2 procedurally generated textures.
+**First of all:** have a look at the *samples* folder. You can view the images directly on github. It contains 3 sample scenes and 2 sample procedurally generated textures.
 
 **What this is:** A basic Haskell raytracer made in a week at the end of my first university semester for a programming contest. I ended up getting 2nd place: http://www.inf.ed.ac.uk/teaching/courses/inf1/fp/competition/2009/competition.html
 
